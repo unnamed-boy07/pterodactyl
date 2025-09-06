@@ -1,13 +1,14 @@
-mkdir pterodactyl
- 
-cd pterodactyl
- 
-mkdir panel
- 
-cd panel
- 
-nano docker-compose.yml
+#!/bin/bash
+# Made by Joy
 
+echo "📦 Installing Pterodactyl Panel with Docker..."
+
+# Step 1: Create directory structure
+mkdir -p pterodactyl/panel
+cd pterodactyl/panel || exit
+
+# Step 2: Create docker-compose.yml file
+cat <<EOF > docker-compose.yml
 version: '3.8'
 
 x-common:
@@ -21,7 +22,6 @@ x-common:
     APP_TIMEZONE: "UTC"
     APP_SERVICE_AUTHOR: "noreply@example.com"
     TRUSTED_PROXIES: "*"
-    # LE_EMAIL: ""
   mail:
     &mail-environment
     MAIL_FROM: "noreply@example.com"
@@ -38,7 +38,7 @@ services:
     restart: always
     command: --default-authentication-plugin=mysql_native_password
     volumes:
-      - "./data/database:/var/lib/mysql"
+      - "/srv/pterodactyl/database:/var/lib/mysql"
     environment:
       <<: *db-environment
       MYSQL_DATABASE: "panel"
@@ -52,16 +52,16 @@ services:
     image: ghcr.io/pterodactyl/panel:latest
     restart: always
     ports:
-      - "8030:80"
-      - "4433:443"
+      - "80:80"
+      - "443:443"
     links:
       - database
       - cache
     volumes:
-      - "./data/var:/app/var"
-      - "./data/nginx:/etc/nginx/http.d"
-      - "./data/certs:/etc/letsencrypt"
-      - "./data/logs:/app/storage/logs"
+      - "/srv/pterodactyl/var/:/app/var/"
+      - "/srv/pterodactyl/nginx/:/etc/nginx/http.d/"
+      - "/srv/pterodactyl/certs/:/etc/letsencrypt/"
+      - "/srv/pterodactyl/logs/:/app/storage/logs"
     environment:
       <<: [*panel-environment, *mail-environment]
       DB_PASSWORD: *db-password
@@ -79,9 +79,15 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
+EOF
 
+# Step 3: Creating folders
 mkdir -p ./data/{database,var,nginx,certs,logs}
 
+# Step 4: starting docker
 docker-compose up -d
 
+echo "✅ Pterodactyl Panel installation complete!"
+
+# Step 5: Create an admin user for the Panel
 docker-compose run --rm panel php artisan p:user:make
