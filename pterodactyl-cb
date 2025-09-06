@@ -82,7 +82,7 @@ networks:
 EOF
 
 # Step 3: Creating folders
-mkdir -p ./data/{database,var,nginx,certs,logs}
+mkdir -p ./data/{database,var,nginx,certs,logs} || exit
 
 # Step 4: starting docker
 docker-compose up -d
